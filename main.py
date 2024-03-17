@@ -17,13 +17,13 @@ def main():
     ap.add_argument("-t", "--time", required=False, help="Remove timestamps from every message in the output.", action="store_false", default=True)
     ap.add_argument("-c", "--console", required=False, help="Display the data in the console instead of writing them to a file. Not recommended for large datasets.", action="store_true", default=False)
 
-	argv = ap.parse_args()
+    argv = ap.parse_args()
 
-	data = Data(argv.directory)
+    data = Data(argv.directory)
 
-	m,n = data.get_messages(argv.key,argv.limit,argv.u,argv.r,argv.attachment)
+    timestamps,messages = data.get_messages(argv.key,argv.limit,argv.u,argv.r,argv.attachment)
 
-	data.output(m,n,argv.name,argv.output,argv.index,argv.time,argv.console)
+    data.output(timestamps,messages,argv.name,argv.output,argv.index,argv.time,argv.console)
 
 
 if __name__ == "__main__":

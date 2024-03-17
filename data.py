@@ -45,18 +45,18 @@ class Data:
 			with open(file_dir,"r") as f: # collecting the json data (file_name/messages.json)
 				try:
 					d = json.load(f)
-					for x in d: # checking all the expected key
+					for x in d: # checking for all the expected keys
 						x["Contents"]
 						x["Attachments"]
 						x["ID"]
 						x["Timestamp"]
-				except:
-					print(f"Warrning: Unexpected json Syntax at {file_dir}")
+				except(KeyError,json.JSONDecodeError):
+					print(f"Warning: Unexpected json Syntax at {file_dir}")
 					continue
 				data.append(d)
 
 		if not data:
-			print(f"Error: Data not Found, check if the data directory is correct\nDirectory: {directory}\n")
+			print(f"Error: Data not found, check if the data directory is correct\nDirectory: {directory}")
 			sys.exit(1)
 
 		self.data = data
@@ -66,7 +66,7 @@ class Data:
 	@timer
 	def get_messages(self,key="",limit=-1,st=True,reverse=False,attachment=False):
 		messages = []
-		tm = []
+		timestamps = []
 
 		# limit: -1 = all
 		if limit == -1:
@@ -83,12 +83,12 @@ class Data:
 				if message: 
 					if key in message:
 						messages.append(message)
-						tm.append(item["Timestamp"])
+						timestamps.append(item["Timestamp"])
 
 		if st and messages:						
-			tm,messages = zip(*sorted(zip(tm,messages),reverse=reverse)) # messages sorted by timestamp
+			timestamps,messages = zip(*sorted(zip(timestamps,messages),reverse=reverse)) # messages sorted by timestamp
 
-		return tm,messages 
+		return timestamps,messages 
 
 
 	@staticmethod
@@ -109,7 +109,7 @@ class Data:
 
 
 	@timer
-	def output(self,time,messages,name,directory="",index=False,timestamps=True,console=False):
+	def output(self,timestamps,messages,name,directory="",index=False,time=True,console=False):
 		name = Data.valid_fname(name,directory)
 		string = ""
 
@@ -117,8 +117,8 @@ class Data:
 			if index:
 				string += str(i+1)
 				string += ". "
-			if timestamps:
-				string += time[i]
+			if time:
+				string += timestamps[i]
 				string += ": "
 			string += messages[i]+"\n"
 
