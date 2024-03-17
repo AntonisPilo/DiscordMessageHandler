@@ -55,3 +55,5 @@ You can customize the output data according to your needs using the following ar
 * -t, --time: Optional argument. Removes timestamps from every message in the output.
 
 * -c, --console: Optional argument. Displays the data in the console instead of writing them to a file. Not recommended for large datasets.
+
+<sup><sub>Discord Version Info: stable 275565 (ede2af3) Host 1.0.9036 x86 (44978) Windows 11 64-bit (10.0.22631)</sub></sup>
