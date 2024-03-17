@@ -1,5 +1,5 @@
 # DiscordMessageHandler:
-DiscordMessageHandler is a cool tool that handles and helps you organize all the message data from your Discord account that you've ever sent
+DiscordMessageHandler is a script that handles and helps you organize all the messages from your Discord account that you've ever sent.
 
 # Data:
 To get the file with your discord data, go to Discord/USER SETTINGS/Privacy & Safety/Request all of my Data (It can take many hours-days for discord to email you the data, depends of how old-active is the account).
