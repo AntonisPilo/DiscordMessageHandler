@@ -11,65 +11,34 @@ def timer(method):
         start = time.time()
         result = method(*args, **kwargs)
         end = time.time()
-        ms = (end-start)*100
-
+        ms = (end-start)*1000
         if method.__name__ == "__init__":
         	print(f"Data collected: {int(ms)}ms")
         elif method.__name__ == "get_messages":
         	print(f"Data organised: {int(ms)}ms")
         elif method.__name__ == "output":
         	print(f"Data outputted: {int(ms)}ms")
-
+        else:
+        	print(f"{method.__name__}: {int(ms)}ms")
         return result
     return wrapper
 
 
 class Data:
-	version = "v1.0.0"
+	version = "v1.1.0"
 
 	@timer
 	def __init__(self,directory):
 		self.directory = directory
-		files = glob.glob(f"{directory}/*")
-		data = []
-
-		for item in files:
-			if "." in item: # ignores files
-				continue
-
-			file_dir = os.path.join(directory,item,"messages.json")
-
-			if not (os.path.exists(file_dir)): # ignores other folders
-				continue
-
-			with open(file_dir,"r") as f: # collecting the json data (file_name/messages.json)
-				try:
-					d = json.load(f)
-					for x in d: # checking for all the expected keys
-						x["Contents"]
-						x["Attachments"]
-						x["ID"]
-						x["Timestamp"]
-				except(KeyError,json.JSONDecodeError):
-					print(f"Warning: Unexpected json Syntax at {file_dir}")
-					continue
-				data.append(d)
-
-		if not data:
-			print(f"Error: Data not found, check if the data directory is correct\nDirectory: {directory}")
-			sys.exit(1)
-
-		self.data = data
-
+		self.data = self.get_data(directory)
+		self.messages = []
+		self.timestamps = []
 
 
 	@timer
 	def get_messages(self,key="",limit=-1,st=True,reverse=False,attachment=False):
-		messages = []
-		timestamps = []
-
-		# limit: -1 = all
-		if limit == -1:
+		"""Retrieve and optionally sort messages based on provided parameters."""
+		if limit == -1: # limit: -1 = all
 			limit = len(self.data)
 
 		for i in range(limit): # running data per folder
@@ -82,19 +51,100 @@ class Data:
 
 				if message: 
 					if key in message:
-						messages.append(message)
-						timestamps.append(item["Timestamp"])
+						self.messages.append(message)
+						self.timestamps.append(item["Timestamp"])
 
-		if st and messages:						
-			timestamps,messages = zip(*sorted(zip(timestamps,messages),reverse=reverse)) # messages sorted by timestamp
+		if st and self.messages:						
+			self.timestamps,self.messages = zip(*sorted(zip(self.timestamps,self.messages),reverse=reverse)) # messages sorted by timestamp
 
-		return timestamps,messages 
+
+	@timer
+	def output(self,name,directory="",index=False,time=True,console=False):
+		"""Output messages to a file or console based on provided parameters."""
+		name = self.valid_fname(name,directory)
+		string = self.messages_to_string(index,time)
+
+		if console:
+			print(string)
+		else:
+			file_dir = os.path.join(directory,name+".txt")
+			self.write_data(string,file_dir)
+
+
+	def messages_to_string(self,index=True,time=True):
+		"""Convert messages to a formatted string."""
+		string = ""
+		for i in range(len(self.messages)): # messages per line
+			if index:
+				string += str(i+1)
+				string += ". "
+			if time:
+				string += self.timestamps[i]
+				string += ": "
+			string += self.messages[i]+"\n"
+		return string
+
+
+	@staticmethod
+	def write_data(string,directory):
+		"""Write the provided string to a file."""
+		try:
+			with open(directory,"w") as f:
+				try:
+					f.write(string)
+				except (IOError, OSError):
+					print("Error: There was an error writing to the file")
+		except (FileNotFoundError, PermissionError, OSError):
+			print(f"Error: There was an error while opening the file, check the output directory {directory}")
+			sys.exit(1)
+
+
+	@staticmethod
+	def valid_data(name,directory):
+		 """Validate and return JSON data from the specified directory."""
+		 if "." in name: # ignores file
+		 	return {}
+
+		 file_dir = os.path.join(directory,name,"messages.json")
+
+		 if not (os.path.exists(file_dir)): # ignores other folders
+		 	return {}
+
+		 with open(file_dir,"r") as f: # collecting the json data (file_name/messages.json)
+		 	try:
+		 		jdata = json.load(f)
+		 		for x in jdata: # checking for all the expected keys
+		 			x["Contents"]
+		 			x["Attachments"]
+		 			x["ID"]
+		 			x["Timestamp"]
+		 	except(KeyError,json.JSONDecodeError):
+		 		print(f"Warning: Unexpected json Syntax at {file_dir}")
+		 		return {}
+
+		 return jdata
+
+
+	@staticmethod
+	def get_data(directory):
+		"""Retrieve and validate all JSON data from the specified directory."""
+		data = []
+		files = glob.glob(f"{directory}/*")
+
+		for item in files:
+			fdata = Data.valid_data(item,directory)
+			data.append(fdata)
+
+		if not data:
+			print(f"Error: Data not found, check if the data directory is correct\nDirectory: {directory}")
+			sys.exit(1)
+
+		return data
 
 
 	@staticmethod
 	def valid_fname(name,directory): 
-		# checking if the file name is valid
-		# or making another file with index (name1, name2, name3, ... , nameX)
+		"""Generate a valid file name, ensuring no conflicts with existing files."""
 		n = name
 		s = 2
 
@@ -106,32 +156,3 @@ class Data:
 			file_dir = os.path.join(directory,n+".txt")
 
 		return n
-
-
-	@timer
-	def output(self,timestamps,messages,name,directory="",index=False,time=True,console=False):
-		name = Data.valid_fname(name,directory)
-		string = ""
-
-		for i in range(len(messages)): # messages per line
-			if index:
-				string += str(i+1)
-				string += ". "
-			if time:
-				string += timestamps[i]
-				string += ": "
-			string += messages[i]+"\n"
-
-		if console:
-			print(string)
-		else:
-			file_dir = os.path.join(directory,name+".txt")
-			try:
-				with open(file_dir,"w") as f:
-					try:
-						f.write(string)
-					except (IOError, OSError):
-						print("Error: There was an error writing to the file")
-			except (FileNotFoundError, PermissionError, OSError):
-				print(f"Error: There was an error while opening the file, check the output directory {directory}")
-				sys.exit(1)

@@ -21,9 +21,9 @@ def main():
 
     data = Data(argv.directory)
 
-    timestamps,messages = data.get_messages(argv.key,argv.limit,argv.u,argv.r,argv.attachment)
+    data.get_messages(argv.key,argv.limit,argv.u,argv.r,argv.attachment)
 
-    data.output(timestamps,messages,argv.name,argv.output,argv.index,argv.time,argv.console)
+    data.output(argv.name,argv.output,argv.index,argv.time,argv.console)
 
 
 if __name__ == "__main__":
